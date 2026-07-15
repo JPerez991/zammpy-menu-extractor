@@ -1,12 +1,13 @@
 import os
 import json
 import re
+import time
 import httpx
 from dotenv import load_dotenv
 
 load_dotenv()
 
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
 
 PROMPT = """Eres un extractor de datos de menús de restaurante. Tu ÚNICO trabajo es leer lo que ves en la imagen y devolverlo como JSON.
 
@@ -59,7 +60,7 @@ SOLO el JSON. Nada más antes ni después."""
 def extract_menu(image_b64: str, mime_type: str = "image/jpeg") -> dict:
     api_key = os.getenv("GEMINI_API_KEY", "")
     if not api_key or api_key == "tu_api_key_de_gemini_aqui":
-        raise ValueError("GEMINI_API_KEY no configurada en .env.local")
+        raise ValueError("GEMINI_API_KEY no configurada en .env")
 
     is_pdf = mime_type == "application/pdf"
 
@@ -76,8 +77,15 @@ def extract_menu(image_b64: str, mime_type: str = "image/jpeg") -> dict:
     }
 
     with httpx.Client(timeout=60.0) as client:
-        resp = client.post(f"{GEMINI_URL}?key={api_key}", json=payload)
-        resp.raise_for_status()
+        for attempt in range(3):
+            resp = client.post(f"{GEMINI_URL}?key={api_key}", json=payload)
+            if resp.status_code in (429, 503):
+                wait = (attempt + 1) * 5
+                print(f"[RETRY] 429 Too Many Requests, esperando {wait}s...")
+                time.sleep(wait)
+                continue
+            resp.raise_for_status()
+            break
 
     data = resp.json()
     text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")

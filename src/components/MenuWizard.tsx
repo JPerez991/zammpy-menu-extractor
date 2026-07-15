@@ -23,8 +23,14 @@ export default function MenuWizard() {
         body: JSON.stringify({ file: base64, mimeType }),
       });
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.detail || data.error || "Error al extraer menú");
+        let msg = "Error al extraer menú";
+        try {
+          const data = await res.json();
+          msg = data.detail || data.error || msg;
+        } catch {
+          try { msg = await res.text(); } catch {}
+        }
+        throw new Error(msg);
       }
       const extracted: MenuData = await res.json();
       setMenu(extracted);
