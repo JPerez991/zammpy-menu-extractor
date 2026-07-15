@@ -17,14 +17,14 @@ export default function MenuWizard() {
     setExtracting(true);
     setError("");
     try {
-      const res = await fetch("/api/extract", {
+      const res = await fetch("http://localhost:8000/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ file: base64, mimeType }),
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Error al extraer menú");
+        throw new Error(data.detail || data.error || "Error al extraer menú");
       }
       const extracted: MenuData = await res.json();
       setMenu(extracted);
@@ -40,7 +40,7 @@ export default function MenuWizard() {
     setExtracting(true);
     setError("");
     try {
-      const res = await fetch("/api/extract", {
+      const res = await fetch("http://localhost:8000/demo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "demo" }),
