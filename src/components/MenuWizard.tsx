@@ -17,7 +17,7 @@ export default function MenuWizard() {
     setExtracting(true);
     setError("");
     try {
-      const res = await fetch("http://localhost:8000/extract", {
+      const res = await fetch("/api/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ file: base64, mimeType }),
@@ -40,7 +40,7 @@ export default function MenuWizard() {
     setExtracting(true);
     setError("");
     try {
-      const res = await fetch("http://localhost:8000/demo", {
+      const res = await fetch("/api/demo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "demo" }),

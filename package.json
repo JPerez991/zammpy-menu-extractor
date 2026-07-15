@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "cd backend && python main.py & next dev",
+    "dev:next": "next dev",
+    "dev:python": "cd backend && python main.py",
     "build": "next build",
     "start": "next start"
   },
