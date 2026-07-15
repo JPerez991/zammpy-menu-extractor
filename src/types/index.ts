@@ -1,22 +1,29 @@
-export interface ExtractedCategory {
+export const VALID_ICONS = [
+  "burger", "cup", "cake", "ice", "box", "pizza", "bag",
+  "soup", "star", "heart", "bread", "croissant", "cookie",
+  "sandwich", "beef", "fish", "salad", "leaf", "wine",
+  "beer", "chef", "fork",
+] as const;
+
+export type ZammpyIcon = (typeof VALID_ICONS)[number];
+
+export interface MenuCategory {
   name: string;
-  products: ExtractedProduct[];
+  icon: ZammpyIcon;
 }
 
-export interface ExtractedProduct {
+export interface MenuProduct {
+  categoryName: string;
   name: string;
-  description: string | null;
-  price: number | null;
+  description: string;
+  price: number;
+  components: string[];
+  imageUrl: string;
 }
 
-export interface ExtractedGrupo {
-  name: string;
-  items: string[];
-}
-
-export interface ExtractedMenu {
-  categories: ExtractedCategory[];
-  grupos: ExtractedGrupo[];
+export interface MenuData {
+  categories: MenuCategory[];
+  products: MenuProduct[];
 }
 
 export interface ZammpyMenu {
@@ -27,37 +34,6 @@ export interface ZammpyMenu {
   hasDraftChanges: boolean;
   thumbnailUrl?: string;
   [key: string]: unknown;
-}
-
-export interface ZammpyCategory {
-  id: string;
-  name: string;
-  tipoContenido: string;
-  isVisible: boolean;
-}
-
-export interface ZammpyProduct {
-  id: string;
-  categoryId: string;
-  name: string;
-  description: string;
-  price: number;
-  isVisible: boolean;
-  tags: string[];
-  grupoIds: string[];
-}
-
-export interface ZammpyGrupo {
-  id: string;
-  name: string;
-  items: string[];
-  isActive: boolean;
-}
-
-export interface ZammpyDraft {
-  categories: ZammpyCategory[];
-  products: ZammpyProduct[];
-  grupos: ZammpyGrupo[];
 }
 
 export interface AuthResponse {

@@ -11,22 +11,10 @@ interface User {
   avatar?: string;
 }
 
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: Record<string, unknown>) => void;
-          prompt: (callback?: (notification: { notDisplayed?: string; skipped?: string; dismissed?: string }) => void) => void;
-        };
-      };
-    };
-  }
-}
-
 export default function Home() {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [showLogin, setShowLogin] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("zammpy_token");
@@ -47,6 +35,7 @@ export default function Home() {
 
   const handleLogin = useCallback((newToken: string) => {
     setToken(newToken);
+    setShowLogin(false);
     const accounts = JSON.parse(localStorage.getItem("zammpy_accounts") || "[]");
     const current = accounts.find((a: { token: string }) => a.token === newToken);
     if (current) {
@@ -65,9 +54,26 @@ export default function Home() {
     setUser(null);
   };
 
-  if (!token) {
-    return <LoginForm onLogin={handleLogin} />;
+  if (showLogin) {
+    return (
+      <div>
+        <LoginForm onLogin={handleLogin} />
+        <button
+          onClick={() => setShowLogin(false)}
+          className="fixed top-4 left-4 text-sm text-gray-500 hover:text-gray-700 bg-white rounded-lg px-3 py-1.5 shadow-sm border border-gray-200 z-50"
+        >
+          ← Volver al extractor
+        </button>
+      </div>
+    );
   }
 
-  return <MenuWizard token={token} onLogout={handleLogout} user={user || undefined} />;
+  return (
+    <MenuWizard
+      token={token || undefined}
+      onLogout={token ? handleLogout : undefined}
+      onLogin={() => setShowLogin(true)}
+      user={user || undefined}
+    />
+  );
 }
