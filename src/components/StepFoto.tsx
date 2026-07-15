@@ -4,10 +4,11 @@ import { useRef, useState } from "react";
 
 interface Props {
   onFileSelected: (base64: string, mimeType: string) => void;
+  onDemo?: () => void;
   loading: boolean;
 }
 
-export default function StepFoto({ onFileSelected, loading }: Props) {
+export default function StepFoto({ onFileSelected, onDemo, loading }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -128,6 +129,25 @@ export default function StepFoto({ onFileSelected, loading }: Props) {
           if (file) handleFile(file);
         }}
       />
+
+      {onDemo && (
+        <>
+          <div className="relative w-full my-2">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-white px-3 text-gray-400">o</span>
+            </div>
+          </div>
+          <button
+            onClick={onDemo}
+            className="w-full border border-dashed border-indigo-300 bg-indigo-50 text-indigo-700 py-3 rounded-xl text-sm font-medium hover:bg-indigo-100 transition-colors"
+          >
+            Cargar datos de prueba
+          </button>
+        </>
+      )}
     </div>
   );
 }

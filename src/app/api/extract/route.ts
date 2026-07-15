@@ -196,6 +196,36 @@ export async function POST(request: Request) {
       return Response.json({ ok: true, ...result });
     }
 
+    // === Demo data ===
+    if (body.action === "demo") {
+      console.log(`[DEMO] Returning mock menu data`);
+      const mock: MenuData = {
+        categories: [
+          { name: "Hamburguesas", icon: "burger" },
+          { name: "Pizzas", icon: "pizza" },
+          { name: "Bebidas", icon: "cup" },
+          { name: "Postres", icon: "cake" },
+          { name: "Ensaladas", icon: "salad" },
+        ],
+        products: [
+          { categoryName: "Hamburguesas", name: "Clásica", description: "Carne 150g, lechuga, tomate, cebolla", price: 22000, components: ["Carne", "Lechuga", "Tomate", "Cebolla", "Pan brioche"], imageUrl: "" },
+          { categoryName: "Hamburguesas", name: "Doble Cheddar", description: "Doble carne, queso cheddar, bacon", price: 32000, components: ["Doble carne", "Cheddar", "Bacon", "Pan brioche"], imageUrl: "" },
+          { categoryName: "Hamburguesas", name: "Vegana", description: "Patty de garbanzo, aguacate, tomate", price: 24000, components: ["Patty garbanzo", "Aguacate", "Tomate", "Lechuga"], imageUrl: "" },
+          { categoryName: "Pizzas", name: "Margherita", description: "Salsa de tomate, mozzarella, albahaca fresca", price: 28000, components: ["Masa artesanal", "Salsa tomate", "Mozzarella", "Albahaca"], imageUrl: "" },
+          { categoryName: "Pizzas", name: "Pepperoni", description: "Pepperoni artesanal, queso mozzarella", price: 32000, components: ["Masa", "Pepperoni", "Mozzarella", "Salsa tomate"], imageUrl: "" },
+          { categoryName: "Pizzas", name: "Cuatro Quesos", description: "Mozzarella, gorgonzola, parmesano, provolone", price: 34000, components: ["Mozzarella", "Gorgonzola", "Parmesano", "Provolone"], imageUrl: "" },
+          { categoryName: "Bebidas", name: "Limonada natural", description: "Limón fresco, hielo", price: 8000, components: ["Limón", "Agua", "Hielo"], imageUrl: "" },
+          { categoryName: "Bebidas", name: "Jugo de mango", description: "Mango natural, sin azúcar añadida", price: 9000, components: ["Mango", "Agua"], imageUrl: "" },
+          { categoryName: "Bebidas", name: "Cerveza artesanal", description: "IPA local, 473ml", price: 14000, components: [], imageUrl: "" },
+          { categoryName: "Postres", name: "Tiramisú", description: "Tiramisú italiano tradicional", price: 16000, components: ["Cacao", "Café", "Queso mascarpone", "Bizcocho"], imageUrl: "" },
+          { categoryName: "Postres", name: "Brownie", description: "Brownie de chocolate con helado", price: 14000, components: ["Chocolate", "Helado de vainilla"], imageUrl: "" },
+          { categoryName: "Ensaladas", name: "Caesar", description: "Lechuga romana, pollo grillado, crutones", price: 18000, components: ["Lechuga romana", "Pollo", "Crutones", "Parmesano", "Aderezo Caesar"], imageUrl: "" },
+          { categoryName: "Ensaladas", name: "Mediterránea", description: "Tomate, pepino, aceitunas, queso feta", price: 17000, components: ["Tomate", "Pepino", "Aceitunas", "Queso feta", "Aceite de oliva"], imageUrl: "" },
+        ],
+      };
+      return Response.json(mock);
+    }
+
     // === Gemini extraction (formato Zammpy) ===
     if (body.file) {
       const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
