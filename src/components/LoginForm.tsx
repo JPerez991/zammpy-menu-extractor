@@ -93,10 +93,10 @@ export default function LoginForm({ onLogin }: Props) {
   useEffect(() => {
     if (googleInitRef.current) return;
     const checkGoogle = setInterval(() => {
-      if (window.google?.accounts?.id) {
+      if ((window as any).google?.accounts?.id) {
         clearInterval(checkGoogle);
         googleInitRef.current = true;
-        window.google.accounts.id.initialize({
+        (window as any).google.accounts.id.initialize({
           client_id: GOOGLE_CLIENT_ID,
           callback: handleGoogleResponse,
           auto_select: false,
@@ -107,8 +107,8 @@ export default function LoginForm({ onLogin }: Props) {
   }, [handleGoogleResponse]);
 
   const openGooglePopup = () => {
-    if (window.google?.accounts?.id) {
-      window.google.accounts.id.prompt((notification) => {
+    if ((window as any).google?.accounts?.id) {
+      (window as any).google.accounts.id.prompt((notification: any) => {
         if (notification?.notDisplayed || notification?.skipped) {
           setError(
             "No se pudo abrir el popup de Google. Intenta desbloquear popups para este sitio."

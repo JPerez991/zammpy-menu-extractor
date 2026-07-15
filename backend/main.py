@@ -1,10 +1,11 @@
 import time
+from typing import List
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from ocr import extract_menu
+from ocr import extract_menu, extract_menu_multi
 
 app = FastAPI(title="Zammpy Menu Extractor")
 
@@ -22,6 +23,16 @@ class ExtractRequest(BaseModel):
     mimeType: str = "image/jpeg"
 
 
+class FileItem(BaseModel):
+    file: str
+    mimeType: str = "image/jpeg"
+    fileName: str = "Archivo"
+
+
+class ExtractMultiRequest(BaseModel):
+    files: List[FileItem]
+
+
 @app.post("/extract")
 async def extract_menu_endpoint(req: ExtractRequest):
     start = time.time()
@@ -30,6 +41,22 @@ async def extract_menu_endpoint(req: ExtractRequest):
         elapsed = time.time() - start
         print(f"[EXTRACT] {len(menu.get('categories', []))} categorías, {len(menu.get('products', []))} productos en {elapsed:.1f}s")
         return menu
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        print(f"[ERROR] {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/extract-multi")
+async def extract_multi_endpoint(req: ExtractMultiRequest):
+    start = time.time()
+    files_data = [f.model_dump() for f in req.files]
+    try:
+        result = extract_menu_multi(files_data)
+        elapsed = time.time() - start
+        print(f"[EXTRACT-MULTI] {len(result.get('categories', []))} categorías, {len(result.get('products', []))} productos, {len(result.get('warnings', []))} warnings en {elapsed:.1f}s")
+        return result
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:

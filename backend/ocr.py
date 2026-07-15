@@ -57,7 +57,7 @@ Si NO puedes leer NADA útil del menú, devuelve:
 SOLO el JSON. Nada más antes ni después."""
 
 
-def extract_menu(image_b64: str, mime_type: str = "image/jpeg") -> dict:
+def _call_gemini(image_b64: str, mime_type: str) -> dict:
     api_key = os.getenv("GEMINI_API_KEY", "")
     if not api_key or api_key == "tu_api_key_de_gemini_aqui":
         raise ValueError("GEMINI_API_KEY no configurada en .env")
@@ -76,23 +76,27 @@ def extract_menu(image_b64: str, mime_type: str = "image/jpeg") -> dict:
         "generationConfig": {"temperature": 0.0, "maxOutputTokens": 8192},
     }
 
+    last_error = None
     with httpx.Client(timeout=60.0) as client:
         for attempt in range(3):
             resp = client.post(f"{GEMINI_URL}?key={api_key}", json=payload)
             if resp.status_code in (429, 503):
                 wait = (attempt + 1) * 5
-                print(f"[RETRY] 429 Too Many Requests, esperando {wait}s...")
+                print(f"[RETRY] {resp.status_code}, esperando {wait}s...")
                 time.sleep(wait)
+                last_error = f"Error {resp.status_code}: servidor ocupado, intenta de nuevo"
                 continue
             resp.raise_for_status()
             break
+        else:
+            raise ValueError(last_error or "No se pudo conectar con Gemini tras 3 intentos")
 
     data = resp.json()
     text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
 
     json_match = re.search(r"\{[\s\S]*\}", text)
     if not json_match:
-        raise ValueError("Gemini no devolvió JSON válido")
+        raise ValueError("Gemini no devolvió JSON válido. La imagen podría estar borrosa o no contener un menú legible.")
 
     result = json.loads(json_match.group(0))
 
@@ -102,3 +106,59 @@ def extract_menu(image_b64: str, mime_type: str = "image/jpeg") -> dict:
         result["products"] = []
 
     return result
+
+
+def extract_menu(image_b64: str, mime_type: str = "image/jpeg") -> dict:
+    return _call_gemini(image_b64, mime_type)
+
+
+def extract_menu_multi(files: list[dict]) -> dict:
+    all_categories = {}
+    all_products = []
+    warnings = []
+
+    for i, f in enumerate(files):
+        file_b64 = f["file"]
+        mime_type = f.get("mimeType", "image/jpeg")
+        file_name = f.get("fileName", f"Archivo {i + 1}")
+
+        print(f"[EXTRACT] Procesando {file_name} ({i + 1}/{len(files)})...")
+
+        try:
+            result = _call_gemini(file_b64, mime_type)
+
+            products = result.get("products", [])
+            if not products:
+                warnings.append({
+                    "fileName": file_name,
+                    "message": "No se detectaron platos en esta imagen. Puede que no sea un menú o esté borrosa."
+                })
+            else:
+                for cat in result.get("categories", []):
+                    if cat["name"] not in all_categories:
+                        all_categories[cat["name"]] = cat
+                all_products.extend(products)
+
+        except ValueError as e:
+            msg = str(e)
+            if "borrosa" in msg.lower() or "no devolvió" in msg.lower():
+                warnings.append({"fileName": file_name, "message": f"{file_name}: No se pudo leer el menú. Asegúrate de que la foto sea clara, esté bien iluminada y el texto sea legible."})
+            elif "GEMINI_API_KEY" in msg:
+                warnings.append({"fileName": file_name, "message": "Error de configuración. Contacta al administrador."})
+            elif "servidor" in msg.lower() or "429" in msg or "503" in msg:
+                warnings.append({"fileName": file_name, "message": f"{file_name}: El servicio de IA está ocupado. Intenta de nuevo en unos segundos."})
+            else:
+                warnings.append({"fileName": file_name, "message": f"{file_name}: {msg}"})
+        except Exception as e:
+            print(f"[ERROR] {file_name}: {e}")
+            warnings.append({"fileName": file_name, "message": f"{file_name}: No se pudo procesar este archivo. Verifica que no esté corrupto."})
+
+    categories = list(all_categories.values())
+    if not categories:
+        categories = [{"name": "Menú", "icon": "fork"}]
+
+    return {
+        "categories": categories,
+        "products": all_products,
+        "warnings": warnings,
+    }

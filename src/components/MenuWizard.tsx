@@ -7,20 +7,27 @@ import type { MenuData } from "@/types";
 
 const STEPS = ["Subir", "Revisar"];
 
+interface Warning {
+  fileName: string;
+  message: string;
+}
+
 export default function MenuWizard() {
   const [step, setStep] = useState(0);
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState("");
+  const [warnings, setWarnings] = useState<Warning[]>([]);
   const [menu, setMenu] = useState<MenuData>({ categories: [], products: [] });
 
-  const handleImage = async (base64: string, mimeType: string) => {
+  const handleFiles = async (files: { file: string; mimeType: string; fileName: string }[]) => {
     setExtracting(true);
     setError("");
+    setWarnings([]);
     try {
-      const res = await fetch("/api/extract", {
+      const res = await fetch("/api/extract-multi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ file: base64, mimeType }),
+        body: JSON.stringify({ files }),
       });
       if (!res.ok) {
         let msg = "Error al extraer menú";
@@ -32,7 +39,12 @@ export default function MenuWizard() {
         }
         throw new Error(msg);
       }
-      const extracted: MenuData = await res.json();
+      const result = await res.json();
+      const extracted: MenuData = {
+        categories: result.categories || [],
+        products: result.products || [],
+      };
+      setWarnings(result.warnings || []);
       setMenu(extracted);
       setStep(1);
     } catch (err: unknown) {
@@ -45,6 +57,7 @@ export default function MenuWizard() {
   const handleDemo = async () => {
     setExtracting(true);
     setError("");
+    setWarnings([]);
     try {
       const res = await fetch("/api/demo", {
         method: "POST",
@@ -91,9 +104,20 @@ export default function MenuWizard() {
           </div>
         )}
 
+        {warnings.length > 0 && step === 1 && (
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 text-sm p-3 rounded-lg mb-4">
+            <p className="font-medium mb-1">Algunos archivos no se pudieron procesar:</p>
+            <ul className="list-disc list-inside space-y-1">
+              {warnings.map((w, i) => (
+                <li key={i}>{w.message}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="bg-white rounded-2xl shadow-sm p-5">
           {step === 0 && (
-            <StepFoto onFileSelected={handleImage} onDemo={handleDemo} loading={extracting} />
+            <StepFoto onFilesSelected={handleFiles} onDemo={handleDemo} loading={extracting} />
           )}
           {step === 1 && (
             <StepPreview data={menu} onChange={setMenu} />
