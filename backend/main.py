@@ -1,14 +1,10 @@
-import base64
-import io
-import json
 import time
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from ocr import extract_text
-from parser import parse_menu
+from ocr import extract_menu
 
 app = FastAPI(title="Zammpy Menu Extractor")
 
@@ -26,27 +22,16 @@ class ExtractRequest(BaseModel):
     mimeType: str = "image/jpeg"
 
 
-class DemoRequest(BaseModel):
-    action: str = "demo"
-
-
 @app.post("/extract")
-async def extract_menu(req: ExtractRequest):
+async def extract_menu_endpoint(req: ExtractRequest):
     start = time.time()
     try:
-        blocks = extract_text(req.file)
-        print(f"[OCR] Extracted {len(blocks)} text blocks in {time.time() - start:.1f}s")
-
-        if not blocks:
-            raise HTTPException(status_code=422, detail="No se pudo extraer texto de la imagen")
-
-        menu = parse_menu(blocks)
-        print(f"[PARSE] {len(menu['categories'])} categorías, {len(menu['products'])} productos")
-
+        menu = extract_menu(req.file, req.mimeType)
+        elapsed = time.time() - start
+        print(f"[EXTRACT] {len(menu.get('categories', []))} categorías, {len(menu.get('products', []))} productos en {elapsed:.1f}s")
         return menu
-
-    except HTTPException:
-        raise
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
         print(f"[ERROR] {e}")
         raise HTTPException(status_code=500, detail=str(e))
